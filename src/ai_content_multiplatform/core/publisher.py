@@ -1,100 +1,71 @@
-"""内容发布器。"""
+"""内容导出器 - 将适配内容保存为平台专用格式。"""
 
 from __future__ import annotations
 
-import json
-import sqlite3
-from dataclasses import dataclass, field
-from datetime import datetime
+import os
 from pathlib import Path
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any, Optional, List
 
 from ai_content_multiplatform.core.models import AdaptedContent
 
+class ContentExporter:
+    """内容导出器。"""
 
-@dataclass
-class PublishResult:
-    """发布结果。"""
-    success: bool
-    platform: str = ""
-    url: str = ""
-    error: str = ""
-    published_at: datetime = field(default_factory=datetime.now)
-
-
-class ContentPublisher:
-    """内容发布器。"""
-
-    def __init__(self, settings: Any = None, db_path: Optional[str] = None):
-        """初始化发布器。
-
-        Args:
-            settings: 应用配置（可选）
-            db_path: 历史数据库路径（None 则使用内存数据库）
-        """
-        self.settings = settings
-        self._db_path = db_path
-        self._history: list[dict[str, Any]] = []
-
-    @property
-    def db_path(self) -> str:
-        """获取数据库路径。"""
-        return self._db_path or ":memory:"
-
-    def publish(
+    def export(
         self,
-        adapted_content: AdaptedContent,
-        draft: bool = False,
-    ) -> dict[str, Any]:
-        """发布适配后的内容到对应平台。
+        adapted: AdaptedContent,
+        output_dir: Path,
+        fmt: str = "markdown",
+    ) -> Path:
+        """导出单个平台内容。"""
+        output_dir = Path(output_dir).expanduser()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 安全文件名
+        safe_title = "".join(c for c in adapted.title if c.isalnum() or c in (' ', '-', '_')).strip()
+        safe_title = safe_title.replace(' ', '_')[:30]
+        
+        ext = "md" if fmt == "markdown" else "txt"
+        filename = f"{adapted.platform}_{safe_title}.{ext}"
+        filepath = output_dir / filename
+        
+        # 根据平台生成不同格式
+        if adapted.platform in ["xiaohongshu", "douyin"]:
+            content = self._format_social_media(adapted)
+        elif adapted.platform == "weixin":
+            content = self._format_wechat(adapted)
+        else:
+            content = f"# {adapted.title}\n\n{adapted.content}\n\nTags: {', '.join(adapted.tags)}"
+            
+        filepath.write_text(content, encoding="utf-8")
+        return filepath
 
-        Args:
-            adapted_content: 适配后的内容
-            draft: 是否草稿模式
+    def _format_social_media(self, adapted: AdaptedContent) -> str:
+        """社交媒体格式 (小红书/抖音)：标题 + Emoji 列表 + 标签。"""
+        lines = [f"【标题】{adapted.title}", ""]
+        lines.append(adapted.content)
+        lines.append("")
+        lines.append("【标签】")
+        lines.append(" ".join([f"#{t}" for t in adapted.tags]))
+        return "\n".join(lines)
 
-        Returns:
-            发布结果字典
-        """
-        platform = adapted_content.platform
-        status = "draft" if draft else "published"
+    def _format_wechat(self, adapted: AdaptedContent) -> str:
+        """微信公众号格式：Markdown。"""
+        lines = [f"# {adapted.title}", ""]
+        lines.append(adapted.content)
+        if adapted.tags:
+            lines.append("")
+            lines.append(f"标签：{', '.join(adapted.tags)}")
+        return "\n".join(lines)
 
-        record: dict[str, Any] = {
-            "platform": platform,
-            "title": adapted_content.title,
-            "status": status,
-            "url": f"https://{platform}.example.com/post/{hash(adapted_content.content) % 10000}" if not draft else "",
-            "published_at": datetime.now().isoformat(),
-        }
-        self._history.append(record)
-        return record
-
-    def publish_batch(
+    def export_batch(
         self,
-        contents: list[AdaptedContent],
-        draft: bool = False,
-    ) -> list[dict[str, Any]]:
-        """批量发布内容。
-
-        Args:
-            contents: 适配后的内容列表
-            draft: 是否草稿模式
-
-        Returns:
-            发布结果列表
-        """
-        return [self.publish(c, draft=draft) for c in contents]
-
-    def get_history(self, limit: int = 50) -> list[dict[str, Any]]:
-        """获取发布历史。
-
-        Args:
-            limit: 返回条数限制
-
-        Returns:
-            历史记录列表
-        """
-        return self._history[-limit:]
-
+        contents: List[AdaptedContent],
+        output_dir: Path,
+    ) -> List[Path]:
+        """批量导出。"""
+        return [self.export(c, output_dir) for c in contents]
 
 # 别名兼容
-Publisher = ContentPublisher
+Publisher = ContentExporter
