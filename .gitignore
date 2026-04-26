@@ -24,6 +24,7 @@ wheels/
 venv/
 ENV/
 env/
+.venv/
 
 # IDE
 .vscode/
@@ -36,6 +37,24 @@ env/
 htmlcov/
 .pytest_cache/
 
+# Type checking
+.mypy_cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# App data
+.ai-content-multiplatform/
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak

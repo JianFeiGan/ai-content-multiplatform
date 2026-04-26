@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
+from pathlib import Path
+
+from ai_content_multiplatform.core.models import AdaptedContent
 
 
 def strip_markdown(text: str) -> str:
@@ -39,3 +43,31 @@ def strip_forbidden_words(text: str, words: list[str]) -> str:
     for word in words:
         text = text.replace(word, "")
     return text
+
+
+@dataclass
+class FormattedContent:
+    """格式化后的内容，可保存为文件。"""
+    title: str
+    content: str
+    tags: list[str] | None = None
+
+    def save(self, path: Path) -> None:
+        """保存为 Markdown 文件。"""
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [f"# {self.title}", ""]
+        lines.append(self.content)
+        if self.tags:
+            lines.append("")
+            lines.append(f"Tags: {', '.join(self.tags)}")
+        path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def format_adapted_content(adapted: AdaptedContent) -> FormattedContent:
+    """将 AdaptedContent 转换为 FormattedContent。"""
+    return FormattedContent(
+        title=adapted.title,
+        content=adapted.content,
+        tags=adapted.tags,
+    )

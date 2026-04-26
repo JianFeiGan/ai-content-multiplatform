@@ -21,6 +21,13 @@ class Defaults(BaseModel):
     title_candidates: int = 3
 
 
+class LLMConfig(BaseModel):
+    """LLM 配置。"""
+    model: str = "gpt-4o-mini"
+    temperature: float = 0.7
+    max_tokens: int = 4000
+
+
 class PlatformRulesConfig(BaseModel):
     """平台规则配置文件结构。"""
     platforms: dict[str, dict]
@@ -47,6 +54,24 @@ class AppConfig(BaseSettings):
     default_model: str = "gpt-4o-mini"
     default_temperature: float = 0.7
 
+    @property
+    def llm(self) -> LLMConfig:
+        """获取 LLM 配置。"""
+        return LLMConfig(
+            model=self.default_model,
+            temperature=self.default_temperature,
+        )
+
+    @property
+    def default_platforms(self) -> list[str]:
+        """获取默认平台列表。"""
+        return ["weixin", "zhihu", "douyin", "xiaohongshu", "csdn", "juejin", "toutiao"]
+
+    @property
+    def output_dir(self) -> Path:
+        """获取输出目录。"""
+        return Path("./output")
+
     @staticmethod
     def load_rules(rules_path: Optional[str] = None) -> PlatformRulesConfig:
         """加载平台规则配置文件。"""
@@ -65,3 +90,12 @@ class AppConfig(BaseSettings):
         for platform_id, data in config.platforms.items():
             rules[platform_id] = PlatformRule(**data)
         return rules
+
+    def get_platform_rule(self, platform_id: str) -> Optional[PlatformRule]:
+        """获取单个平台规则。"""
+        rules = self.get_platform_rules()
+        return rules.get(platform_id)
+
+
+# 别名，供 CLI 使用
+Settings = AppConfig
