@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from typing import Optional
 
 from openai import AsyncOpenAI
@@ -155,6 +156,3 @@ class LLMClient:
     async def close(self) -> None:
         """关闭客户端连接。"""
         await self._client.close()
-
-
-import re

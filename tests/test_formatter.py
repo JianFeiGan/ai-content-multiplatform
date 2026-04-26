@@ -53,7 +53,7 @@ def test_truncate_text_long() -> None:
 
 def test_truncate_text_custom_suffix() -> None:
     """测试自定义截断后缀。"""
-    result = truncate_text("长文本", 4, suffix="→")
+    result = truncate_text("这是一段长文本", 4, suffix="→")
     assert result.endswith("→")
 
 

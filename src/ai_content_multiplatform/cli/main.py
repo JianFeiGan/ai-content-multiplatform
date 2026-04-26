@@ -20,7 +20,7 @@ app = typer.Typer(
 app.command("adapt")(adapt_cmd)
 app.command("preview")(preview_cmd)
 app.command("publish")(publish_cmd)
-app.command("config")(config_cmd)
+app.add_typer(config_cmd, name="config")
 
 
 if __name__ == "__main__":
