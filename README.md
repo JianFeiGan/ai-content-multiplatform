@@ -793,7 +793,21 @@ ai-content-multiplatform/
 
 ---
 
-## 许可证
+---
+
+## 📂 示例与最佳实践
+
+我们提供了一些真实的输入输出示例，帮助你快速理解各平台的风格差异：
+
+- **输入示例**: [`examples/sample.md`](examples/sample.md) — 一篇标准的通用技术文章。
+- **小红书输出**: [`examples/output_xiaohongshu.md`](examples/output_xiaohongshu.md) — 带有 Emoji、分段和 #标签 的社交媒体格式。
+- **微信公众号输出**: [`examples/output_wechat.md`](examples/output_wechat.md) — 带有 Markdown 排版和引用块的文章格式。
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request，特别是添加新的平台适配器！详细贡献流程请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 📜 许可证
 
 本项目基于 [MIT License](LICENSE) 开源。
 
