@@ -2,7 +2,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![PyPI](https://img.shields.io/badge/pypi-v0.1.0-orange.svg)](https://pypi.org/project/ai-content-multiplatform/)
+[![PyPI](https://img.shields.io/badge/pypi-v0.2.0-orange.svg)](https://pypi.org/project/ai-content-multiplatform/)
 [![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Tests](https://github.com/JianFeiGan/ai-content-multiplatform/actions/workflows/test.yml/badge.svg)](https://github.com/JianFeiGan/ai-content-multiplatform/actions/workflows/test.yml)
 
@@ -18,9 +18,8 @@
 - [使用文档](#使用文档)
   - [adapt — 内容适配](#adapt--内容适配)
   - [preview — 预览效果](#preview--预览效果)
-  - [publish — 发布内容](#publish--发布内容)
+  - [publish — 导出内容](#publish--导出内容)
   - [config — 配置管理](#config--配置管理)
-  - [init — 初始化配置](#init--初始化配置)
 - [平台规则说明](#平台规则说明)
 - [配置说明](#配置说明)
 - [架构说明](#架构说明)
@@ -36,15 +35,15 @@
 ## 特性
 
 - 🌐 **7 平台全覆盖** — 微信公众号、知乎、CSDN、抖音、小红书、掘金、头条号
-- 🤖 **AI 智能适配** — 基于 OpenAI GPT-4o-mini，根据平台规则自动调整标题、正文风格、标签
-- ⚡ **CLI 命令行工具** — 简洁高效的命令行界面，支持文件输入、文本输入、预览、发布
+- 🤖 **AI 智能适配 (v0.2.0)** — 接入 OpenAI GPT-4o-mini，根据平台 Prompt **智能改写**内容（不仅是简单的截断）
+- ⚡ **CLI 命令行工具** — 简洁高效的命令行界面，支持文件输入、文本输入、预览、导出
 - 📦 **批量处理** — 一键将内容适配到所有支持的平台，异步并发执行
 - 📋 **规则配置系统** — YAML 格式的平台规则，包含标题长度、内容限制、封面尺寸、风格提示词、禁用词
-- 🔍 **预览模式** — 适配前预览指定平台的输出效果
-- 📤 **发布管理** — 支持草稿模式和自动发布，发布历史记录（SQLite）
-- 🏃 **Dry Run 模式** — 仅显示适配计划，不实际调用 LLM，方便调试
+- 📤 **多格式导出** — 自动根据平台特性导出格式（如小红书带 Emoji/标签，微信带 Markdown 排版）
+- 🏃 **Dry Run 模式** — 仅显示适配计划，不实际调用 API，方便调试
 - 🎨 **终端美化** — 基于 Rich 库，输出带有颜色、表格、面板等可视化元素
 - 📝 **类型安全** — 全量类型注解 + Pydantic 数据验证 + MyPy 类型检查
+- 🚀 **现代构建工具** — 使用 `uv` 进行依赖管理和打包构建，速度极快
 
 ---
 
@@ -53,7 +52,10 @@
 安装后立即体验：
 
 ```bash
-# 1. 安装
+# 1. 安装（推荐使用 uv 进行极速安装）
+uv tool install ai-content-multiplatform
+
+# 或者使用传统的 pip
 pip install ai-content-multiplatform
 
 # 2. 配置 OpenAI API Key（推荐使用 .env 文件）
@@ -67,7 +69,7 @@ ai-content-multiplatform --help
 $ ai-content-multiplatform --help
 
  ╭─────────────────────────────────────────╮
- │  AI Content Multiplatform v0.1.0        │
+ │  AI Content Multiplatform v0.2.0        │
  │  AI 内容多平台适配与发布工具              │
  ╰─────────────────────────────────────────╯
 
@@ -123,7 +125,13 @@ ai-content-multiplatform adapt file examples/sample.md -p all
 
 ### 方式一：从 PyPI 安装（推荐）
 
+推荐使用 `pipx` 或 `uv` 进行隔离安装，避免污染系统环境：
+
 ```bash
+# 使用 uv (推荐，速度极快)
+uv tool install ai-content-multiplatform
+
+# 或者使用 pip
 pip install ai-content-multiplatform
 ```
 
@@ -132,18 +140,25 @@ pip install ai-content-multiplatform
 ```bash
 git clone https://github.com/JianFeiGan/ai-content-multiplatform.git
 cd ai-content-multiplatform
-pip install .
+uv pip install .
 ```
 
 ### 方式三：开发模式安装
 
+本项目推荐使用 `uv` 进行开发依赖管理：
+
 ```bash
 git clone https://github.com/JianFeiGan/ai-content-multiplatform.git
 cd ai-content-multiplatform
-pip install -e ".[dev]"
+
+# 同步所有依赖（包括 dev 组）
+uv sync --all-groups
+
+# 或者直接安装开发模式
+uv pip install -e ".[dev]"
 ```
 
-> **前置要求**：Python 3.11+ 已安装。
+> **前置要求**：Python 3.11+ 已安装。如果未安装 `uv`，请参考 [uv 官方文档](https://docs.astral.sh/uv/) 进行安装。
 
 ### 环境变量配置
 
@@ -253,23 +268,27 @@ ai-content-multiplatform preview content input.md weixin
  ╰──────────────────────────────────────────╯
 ```
 
-### publish — 发布内容
+### publish — 导出内容
 
-将适配后的内容发布到指定平台。
+将内容文件直接导出为各平台专用格式（无需经过适配步骤，适用于已有内容文件的快速导出）。
 
 ```bash
-# 发布为草稿
-ai-content-multiplatform publish to-platform weixin output/weixin_*.md --draft
+# 导出到所有平台（默认输出到 ./output 目录）
+ai-content-multiplatform publish input.md -p all
 
-# 直接发布
-ai-content-multiplatform publish to-platform zhihu output/zhihu_*.md
+# 导出到指定平台并指定输出目录
+ai-content-multiplatform publish input.md -p xiaohongshu,zhihu -o ./my_exports/
+
+# 导出并启用 LLM 进行二次适配
+ai-content-multiplatform publish input.md -p all --llm
 ```
 
 | 参数 | 短选项 | 默认值 | 说明 |
 |------|--------|--------|------|
-| `platform` | — | 必需 | 目标平台标识 |
-| `content_file` | — | 必需 | 适配后的内容文件路径 |
-| `--draft` | `-d` | `False` | 发布为草稿而非正式发布 |
+| `input_file` | — | 必需 | 输入 Markdown 文件路径 |
+| `--platforms` | `-p` | `all` | 目标平台，逗号分隔或 `all` |
+| `--output` | `-o` | `./output` | 导出文件保存目录 |
+| `--llm` | — | `False` | 发布前使用 LLM 重新智能适配 |
 
 ### config — 配置管理
 
@@ -279,35 +298,7 @@ ai-content-multiplatform publish to-platform zhihu output/zhihu_*.md
 ai-content-multiplatform config
 ```
 
-输出示例：
-
-```
- ╭──────────── ⚙️  当前配置 ─────────────╮
- │ LLM 配置:                             │
- │   模型：gpt-4o-mini                    │
- │   温度：0.7                            │
- │                                       │
- │ 默认平台: weixin, zhihu, csdn, ...     │
- │                                       │
- │ 输出目录: /Users/xxx/output            │
- ╰───────────────────────────────────────╯
-```
-
-### init — 初始化配置
-
-生成默认配置文件到指定路径。
-
-```bash
-# 默认路径 ~/.ai-content-multiplatform/config.yaml
-ai-content-multiplatform init
-
-# 自定义路径
-ai-content-multiplatform init -o ./my-config.yaml
-```
-
----
-
-## 平台规则说明
+### 平台规则说明
 
 每个平台都有独特的内容规范。以下是各平台的详细规则：
 
@@ -689,6 +680,8 @@ chore: 构建/工具链
 
 ## 开发环境设置
 
+本项目推荐使用 **[uv](https://docs.astral.sh/uv/)** 进行环境管理和构建。
+
 ### 1. 克隆项目
 
 ```bash
@@ -696,58 +689,56 @@ git clone https://github.com/JianFeiGan/ai-content-multiplatform.git
 cd ai-content-multiplatform
 ```
 
-### 2. 创建虚拟环境
+### 2. 初始化环境
+
+`uv` 会自动管理虚拟环境和 Python 版本：
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-# 或
-.venv\Scripts\activate     # Windows
+# 自动创建虚拟环境并安装所有依赖（含 dev 组）
+uv sync --all-extras
 ```
 
-### 3. 安装开发依赖
+### 3. 运行测试
 
-```bash
-pip install -e ".[dev]"
-```
-
-### 4. 运行测试
+所有命令需通过 `uv run` 执行，以确保使用项目隔离的依赖环境：
 
 ```bash
 # 运行全部测试
-pytest
+uv run pytest
 
 # 运行测试并生成覆盖率报告
-pytest --cov=ai_content_multiplatform --cov-report=html
+uv run pytest --cov=ai_content_multiplatform --cov-report=html
 
 # 查看 HTML 覆盖率报告
 open htmlcov/index.html  # macOS
 ```
 
-### 5. 代码规范检查
+### 4. 代码规范检查
 
 ```bash
 # Ruff 检查
-ruff check src/ tests/
+uv run ruff check src/ tests/
 
 # Ruff 自动修复
-ruff check --fix src/ tests/
+uv run ruff check --fix src/ tests/
 
 # Ruff 格式化
-ruff format src/ tests/
+uv run ruff format src/ tests/
 
 # MyPy 类型检查
-mypy src/
+uv run mypy src/
 ```
 
-### 6. CI 本地验证
+### 5. 本地构建与打包
+
+使用 `uv` 构建 Wheel 和源码分发包：
 
 ```bash
-# 完整验证流程
-ruff check src/ tests/ && \
-ruff format --check src/ tests/ && \
-mypy src/ && \
-pytest --cov=ai_content_multiplatform -v
+# 构建项目 (生成 dist/*.whl 和 dist/*.tar.gz)
+uv build
+
+# 检查包内容
+tar -tzf dist/ai_content_multiplatform-*.tar.gz | head -n 20
 ```
 
 ### 项目结构
