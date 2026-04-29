@@ -1,45 +1,109 @@
-# 平台适配规则配置
-# 每个平台的标题长度、内容长度、标签数量、封面尺寸、风格提示词等
+# AI Content Multiplatform - 平台适配规则配置
+# 每个 platform 定义了标题长度、内容长度、标签数量等限制，
+# 以及 LLM 风格提示词和禁用词。
+
+defaults:
+  llm_model: "gpt-4o-mini"
+  temperature: 0.7
+  max_tokens: 4000
+  title_candidates: 3
 
 platforms:
   weixin:
     name: "微信公众号"
     title_max_len: 64
     content_max_len: 20000
-    tag_limit: 0
+    tag_limit: 3
     cover_size: [900, 383]
     style_prompt: |
-      微信公众号风格：标题要吸引眼球、有悬念感，可以用数字、疑问、对比等技巧。
-      正文排版要简洁，段落要短，多用小标题分隔。适合在手机上阅读。
-      语言风格亲切、专业，避免过于学术化。
-    forbidden_words: ["微信", "朋友圈", "点赞"]
-    notes: "微信公众号不支持 Markdown 格式，需要转换为纯文本+HTML 标签"
+      你是一位资深微信公众号编辑。请将内容改编为适合微信公众号的风格：
+      - 标题：吸引眼球但不标题党，可用疑问句或数字列表
+      - 正文：通俗易懂，段落简短，多用空行分隔增强可读性
+      - 排版：适当使用加粗标记重点，每段不超过3-4行
+      - 结尾：可加互动引导（如"你怎么看？欢迎留言"）
+      - 格式：输出纯文本，不使用Markdown格式
+    forbidden_words: []
+    notes: "不支持原生Markdown，内容需转为纯文本或HTML"
 
   zhihu:
     name: "知乎"
     title_max_len: 100
-    content_max_len: 100000
+    content_max_len: 50000
     tag_limit: 5
     cover_size: [1920, 1080]
     style_prompt: |
-      知乎风格：标题要专业、有深度，体现专业性。内容要有逻辑性，
-      可以用「先说结论」「原因分析」「总结」等结构。语言偏理性、客观，
-      适当引用数据和案例。适合长文深度分析。
-    forbidden_words: ["微信", "扫码", "私聊"]
-    notes: "知乎支持 Markdown 格式，可以保留标题、列表、代码块等"
+      你是一位知乎专栏作者。请将内容改编为适合知乎的风格：
+      - 标题：专业严谨，可带问题导向
+      - 正文：深度分析，逻辑清晰，可引用数据和案例
+      - 排版：支持Markdown，代码块需指定语言
+      - 语气：理性客观，适当展现专业深度
+      - 结尾：可提开放性问题引发讨论
+    forbidden_words: []
+    notes: "支持Markdown，适合长文深度分析"
 
   csdn:
     name: "CSDN"
     title_max_len: 100
     content_max_len: 50000
     tag_limit: 10
-    cover_size: [1080, 720]
+    cover_size: [800, 450]
     style_prompt: |
-      CSDN 技术博客风格：标题要具体、包含技术关键词，如「Python实现XX」「XX框架解析」。
-      内容要技术性强，包含代码示例、安装步骤、运行结果。语言简洁直接，
-      以解决问题为导向。多用列表、代码块、表格。
-    forbidden_words: ["转载", "搬运"]
-    notes: "CSDN 支持 Markdown，代码块需要指定语言"
+      你是一位CSDN技术博主。请将内容改编为适合CSDN的风格：
+      - 标题：技术关键词前置，可加修饰词如"详解""实战""深入"
+      - 正文：技术为主，代码示例丰富，注释清晰
+      - 排版：支持Markdown，代码块必须指定语言
+      - 结构：先概述→再详细→最后总结，层次分明
+      - 标签：选择技术相关的标签，最多10个
+    forbidden_words: []
+    notes: "技术博客平台，代码块需指定语言"
+
+  juejin:
+    name: "掘金"
+    title_max_len: 100
+    content_max_len: 50000
+    tag_limit: 5
+    cover_size: [1200, 675]
+    style_prompt: |
+      你是一位掘金技术创作者。请将内容改编为适合掘金的风格：
+      - 标题：吸引开发者注意，可加emoji，突出技术亮点
+      - 正文：技术深度+实战经验，代码可运行
+      - 排版：支持Markdown，善用代码块、表格、引用
+      - 语气：轻松专业，可适当幽默
+      - 标签：精选5个最相关的技术标签
+    forbidden_words: []
+    notes: "技术社区，强调技术深度和代码质量"
+
+  toutiao:
+    name: "头条号"
+    title_max_len: 30
+    content_max_len: 20000
+    tag_limit: 5
+    cover_size: [1280, 720]
+    style_prompt: |
+      你是一位头条号内容创作者。请将内容改编为适合头条的风格：
+      - 标题：简洁有力，30字以内，突出核心信息
+      - 正文：通俗易懂，适合大众阅读，避免过多专业术语
+      - 排版：段落简短，多用小标题分段
+      - 语气：亲和力强，像聊天一样自然
+      - 结尾：引导关注和评论
+    forbidden_words: []
+    notes: "资讯平台风格，通俗化表达，支持三图封面模式"
+
+  xiaohongshu:
+    name: "小红书"
+    title_max_len: 20
+    content_max_len: 1000
+    tag_limit: 10
+    cover_size: [1080, 1440]
+    style_prompt: |
+      你是一位小红书博主。请将内容改编为适合小红书的风格：
+      - 标题：极简吸睛，20字以内，可加1-2个emoji
+      - 正文：轻松活泼，多用emoji装饰，列表式排版
+      - 风格：种草/分享/教程风格，像和朋友聊天
+      - 标签：多用热门话题标签，#标签 格式
+      - 字数：控制在1000字以内，精炼有力
+    forbidden_words: []
+    notes: "标题限20字，正文限1000字，风格轻松活泼"
 
   douyin:
     name: "抖音"
@@ -48,55 +112,11 @@ platforms:
     tag_limit: 15
     cover_size: [1080, 1920]
     style_prompt: |
-      抖音短视频脚本风格：将内容转化为30-60秒的口播文案。
-      开头3秒要抓人眼球，中间讲核心观点，结尾引导互动。
-      语言口语化、有节奏感，可以用「你知道吗」「其实」「简单说」等口头禅。
-      控制字数在300字以内。
-    forbidden_words: ["长按", "点击关注"]
-    notes: "抖音是短视频平台，内容需要改编为口播文案或视频脚本"
-
-  xiaohongshu:
-    name: "小红书"
-    title_max_len: 20
-    content_max_len: 1000
-    tag_limit: 10
-    cover_size: [1242, 1660]
-    style_prompt: |
-      小红书风格：标题要简短有力，用emoji、感叹号、数字等吸引注意。
-      内容要轻松活泼，多用emoji、短句、分段。可以用「干货」「教程」「避坑」等角度切入。
-      结尾加相关话题标签。整体风格亲切、实用、接地气。
-    forbidden_words: ["微信", "淘宝", "京东"]
-    notes: "小红书标题限制20字，内容适合图文笔记形式"
-
-  juejin:
-    name: "掘金"
-    title_max_len: 100
-    content_max_len: 50000
-    tag_limit: 5
-    cover_size: [1200, 630]
-    style_prompt: |
-      掘金技术社区风格：标题要技术性强、有亮点，如「深入理解」「实战指南」「最佳实践」。
-      内容要有技术深度，包含原理分析、代码实现、踩坑记录。
-      适合前端、后端、移动端开发者阅读。
-    forbidden_words: ["转载"]
-    notes: "掘金支持 Markdown，技术社区氛围浓厚"
-
-  toutiao:
-    name: "头条号"
-    title_max_len: 30
-    content_max_len: 50000
-    tag_limit: 5
-    cover_size: [1280, 720]
-    style_prompt: |
-      头条号风格：标题要通俗、有冲击力，用数字、对比、悬念。
-      内容要大众化，避免过于专业的术语，用通俗语言解释复杂概念。
-      段落要短，配图要丰富。适合广泛读者群体。
-    forbidden_words: ["微信", "公众号"]
-    notes: "头条号是资讯平台，内容偏新闻/科普风格"
-
-# 全局默认配置
-defaults:
-  llm_model: "gpt-4o-mini"
-  temperature: 0.7
-  max_tokens: 4000
-  title_candidates: 3  # 每个平台生成的备选标题数
+      你是一位抖音内容创作者。请将内容改编为适合抖音的风格：
+      - 标题：30字以内，配合视频内容的口播文案标题
+      - 正文：口语化的短视频脚本，300字以内
+      - 风格：开头3秒抓人，中间有节奏，结尾有号召
+      - 标签：多用热门话题，#话题 格式
+      - 节奏：短句为主，适合口播节奏
+    forbidden_words: []
+    notes: "短视频平台，内容为口播文案/脚本，限300字"

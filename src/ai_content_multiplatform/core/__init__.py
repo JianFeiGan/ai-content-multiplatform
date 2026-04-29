@@ -19,4 +19,5 @@ from ai_content_multiplatform.core.models import (
     PlatformRule,
 )
 from ai_content_multiplatform.core.parser import parse_file, parse_markdown
-from ai_content_multiplatform.core.publisher import Publisher
+from ai_content_multiplatform.core.history import AdaptHistory
+from ai_content_multiplatform.core.publisher import ContentExporter, Publisher

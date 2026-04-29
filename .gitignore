@@ -58,3 +58,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+
+# Output directory
+output/

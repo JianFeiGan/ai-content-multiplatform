@@ -1,8 +1,10 @@
 """Adapt command - adapt content to different platforms."""
+
 from __future__ import annotations
 
 import asyncio
 import os
+import time
 from pathlib import Path
 
 import typer
@@ -12,9 +14,11 @@ from ai_content_multiplatform.config.settings import AppConfig
 from ai_content_multiplatform.core.parser import parse_file
 from ai_content_multiplatform.core.adapter import ContentAdapter
 from ai_content_multiplatform.core.llm import LLMClient
+from ai_content_multiplatform.core.history import AdaptHistory
 from ai_content_multiplatform.utils.formatter import format_adapted_content
 
 console = Console()
+
 
 def adapt_cmd(
     input_file: str = typer.Argument(..., help="输入内容文件 (Markdown)"),
@@ -22,6 +26,7 @@ def adapt_cmd(
     output_dir: str = typer.Option("./output", "--output", "-o", help="输出目录"),
     use_llm: bool = typer.Option(True, "--llm/--no-llm", help="是否使用 LLM 进行智能适配"),
     dry_run: bool = typer.Option(False, "--dry-run", help="仅显示计划，不调用 API"),
+    save_history: bool = typer.Option(True, "--history/--no-history", help="是否保存适配历史"),
 ) -> None:
     """适配内容到指定平台。"""
     input_path = Path(input_file).expanduser()
@@ -46,7 +51,7 @@ def adapt_cmd(
             console.print(f"[bold green]🤖 LLM 已启用:[/] {settings.default_model}")
         else:
             console.print("[yellow]⚠ 未检测到 OPENAI_API_KEY，降级为规则适配[/]")
-    
+
     adapter = ContentAdapter(settings=settings, llm_client=llm_client)
 
     all_rules = settings.get_platform_rules()
@@ -55,15 +60,25 @@ def adapt_cmd(
     else:
         target_platforms = [p.strip() for p in platforms.split(",")]
 
+    # 验证平台
+    invalid = [p for p in target_platforms if p not in all_rules]
+    if invalid:
+        console.print(f"[red]✗[/] 不支持的平台: {', '.join(invalid)}")
+        console.print(f"[dim]可选平台: {', '.join(all_rules.keys())}[/]")
+        raise typer.Exit(1)
+
     console.print(f"[bold]🎯 目标平台：[/]{', '.join(target_platforms)}")
     console.print("[bold]🔄 开始适配...[/]")
 
     if dry_run:
         for p in target_platforms:
-            console.print(f"  → 将适配 {p}")
+            rule = all_rules[p]
+            console.print(f"  → {rule.name}：标题≤{rule.title_max_len}字，内容≤{rule.content_max_len}字，标签≤{rule.tag_limit}个")
         return
 
-    async def run_adapt():
+    start_time = time.time()
+
+    async def run_adapt() -> list:
         results = []
         for pid in target_platforms:
             try:
@@ -79,10 +94,13 @@ def adapt_cmd(
 
     adapted_list = asyncio.run(run_adapt())
 
-    # 保存结果
+    elapsed = time.time() - start_time
+    console.print(f"[dim]适配耗时: {elapsed:.1f}s[/]")
+
+    # 保存结果到文件
     out_path = Path(output_dir).expanduser()
     out_path.mkdir(parents=True, exist_ok=True)
-    
+
     for adapted in adapted_list:
         formatted = format_adapted_content(adapted)
         file_name = f"{adapted.platform}_{adapted.title[:20]}.md"
@@ -90,5 +108,19 @@ def adapt_cmd(
         formatted.save(file_path)
         console.print(f"  💾 已保存：{file_path}")
 
-    console.print(f"[bold green]✨ 适配完成！文件已保存至 {out_path}[/]")
+    # 保存适配历史
+    if save_history and adapted_list:
+        try:
+            hist = AdaptHistory()
+            metadata = {
+                "llm_enabled": llm_client is not None,
+                "elapsed_seconds": round(elapsed, 2),
+                "source_file": str(input_path),
+            }
+            hist.save_batch(adapted_list, source_title=content.title, metadata=metadata)
+            hist.close()
+            console.print(f"[dim]📜 适配历史已记录[/]")
+        except Exception as e:
+            console.print(f"[yellow]⚠ 保存历史失败：{e}[/]")
 
+    console.print(f"[bold green]✨ 适配完成！文件已保存至 {out_path}[/]")
